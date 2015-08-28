@@ -12,18 +12,15 @@ var total_popups = 0;
 var popups = [];
 
 //our Sockets
-var socketIO = io();
+var socketIO;
 
 //this is used to close a popup
 function close_popup(id) {
 	for (var iii = 0; iii < popups.length; iii++) {
 		if (id == popups[iii]) {
 			Array.remove(popups, iii);
-
 			document.getElementById(id).style.display = "none";
-
 			calculate_popups();
-
 			return;
 		}
 	}
@@ -104,10 +101,67 @@ function sendChatMessage(to, from, message, loginHASH) {
 }
 
 function setupIO() {
-	socketIO.on('chat message recieve', function(query) {
-		
-		
+	
+	var userData = {
+		'userName': getCookie("userName"),
+		'loginHASH': getCookie("loginHASH")
+	};
+	
+	socketIO = io.connect('' , { 
+		query: 'joinServerParameters=' + JSON.stringify(userData) ,
+		'force new connection': true
 	});
+	
+	socketIO.on('error', function (errorData) { 
+		console.log(errorData);
+		if(errorData=="Authentication error") { } 
+	});
+	socketIO.on('connect', function () { console.log("Connected to Chat Server") });
+	
+	socketIO.on('auth validated', function () {
+		console.log('Logged into Authentication');
+	});
+}
+
+function createTestDATA() {
+	setCookie("userName", "SomeUsernameHere", 1);
+	setCookie("loginHASH", "4PzyPedgzOfKZrY5cIb7", 1);
+	console.log("Created test Data");
+}
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+    console.log("Creating cookie(" + cname + ", " + cvalue + ", " + exdays + ")");
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) == 0) {
+        	var data = c.substring(name.length,c.length);
+        	console.log("Reading Cookie(" + cname + ") <-- " + data);
+        	return data;
+        }
+    }
+    return "";
+}
+
+function connectToServer (token) {
+  var socket = io.connect('', {
+    query: 'loginHASH=' + token
+  });
+
+  socket.on('auth validated', function () {
+    console.log('authenticated');
+  }).on('auth disconnected', function () {
+    console.log('disconnected');
+  });
 }
 
 function scrollToBottom(username) {

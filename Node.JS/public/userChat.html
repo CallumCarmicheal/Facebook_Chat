@@ -2,37 +2,40 @@
     <head>
         <link rel="stylesheet" type="text/css" href="css/chatDesign.css">
         <link rel="stylesheet" type="text/css" href="css/normalize.3.css">
-        
+
         <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-        <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+        <script src="js/jquery-1.11.1.min.js"></script>
         <script src="js/chatGUI.js"></script>
     </head>
     
     <body>
+        <script> 
+        
+        window.onload = function () {
+            createTestDATA();
+            setupIO();
+        }
+        
+        </script>
+        
         <header class="navbar navbar-inverse">
         	<div class="navbar-header">
         		<button name="button" type="submit" class="navbar-toggle" data-target=".navbar-responsive-collapse" data-toggle="collapse">
-        		<span class="icon-bar"></span><span class="icon-bar">
-        		</span><span class="icon-bar">
-        		</span>
+            		<span class="icon-bar"></span>
+            		<span class="icon-bar"></span>
+            		<span class="icon-bar"></span>
         		</button>
-        		<a class="navbar-brand" href="/">Facebook like Website</a>
+        		<a class="navbar-brand" href="/"> Facebook like Website </a>
         	</div>
         	<div class="navbar-collapse collapse navbar-responsive-collapse">
         		<ul class="nav navbar-nav navbar-right">
         			<li class="dropdown">
         				<a class="dropdown-toggle" data-target="#" data-toggle="dropdown" href="#">Your Profile <b class="caret"></b></a>
         				<ul class="dropdown-menu">
-        					<li>
-        						<a href="/users/11/profile">Check</a>
-        					</li>
-        					<li>
-        						<a href="/users/11/profile/edit">Edit</a>
-        					</li>
-        					<li class="divider"></li>
-        					<li>
-        						<a href="#">Sign out</a>
-        					</li>
+        					<li> <a href="/users/11/profile">Check</a> </li>
+        					<li> <a href="/users/11/profile/edit">Edit</a> </li>
+        					<li  class="divider"></li>
+        					<li> <a href="#">Sign out</a> </li>
         				</ul>
         			</li>
         		</ul>
