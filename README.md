@@ -3,5 +3,5 @@ A facebook chat program for the project by yhoshino11 @ https://github.com/yhosh
 
 # Send API Request with ...
 ```javascript
-setupIO('username'. 'password');
+setupIO('username', 'password');
 ```
