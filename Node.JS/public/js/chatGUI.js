@@ -11,8 +11,9 @@ var total_popups = 0;
 //arrays of popups ids
 var popups = [];
 
-//our Sockets
+//our Sockets and Auth info
 var socketIO;
+var loginTries = 0;
 
 //this is used to close a popup
 function close_popup(id) {
@@ -80,7 +81,7 @@ function register_popup(id, name) {
 		<div style="clear: both"></div></div>
 		<div class="popup-messages" style="overflow:hidden;"> 
 			<div id="chat_User:` + name + `" style="height: 80%;overflow: auto;width:100%;">` + message + `</div> 
-			<div style="bottom:0px;height:20%;width:100%;"><textarea style="width:100%;height:47%;" onkeydown="if(event.keyCode == 13) {sendChatMessage(` + name + `);}" name="chat_Text:` + name + `"></textarea></div>
+			<div style="bottom:0px;height:20%;width:100%;"><textarea style="width:100%;height:47%;resize: none;" onkeydown="if(event.keyCode == 13) {sendChatMessage(` + name + `);}" id="chat_Text:` + name + `"></textarea></div>
 		</div>
 	`; // So why is the textarea not going at full width
 	
@@ -89,22 +90,44 @@ function register_popup(id, name) {
 	calculate_popups();
 }
 
+function addFriendToList(userData) {
+	
+	var element = 			`<div class="sidebar-name">`;
+	element 	= element + `<a href="javascript:register_popup('` + userData.username + `', '` + userData.fullname + `');">`;
+    element 	= element + `<img width="30" height="30" src="img/icon_user.png" />`;
+    element 	= element + `<span>` + userData.fullname + `</span>`;
+    element 	= element + `</a>`;
+    element 	= element + `</div>`;
+    
+    var userList = document.getElementById("friends_USERLIST");
+    userList.innerHTML = userList.innerHTML + element;
+}
+
+function addFriendToListSTR(username, fullname) {
+	addFriendToList({ 'username': username, 'fullname': fullname });
+}
+
 function sendChatMessage(to, from, message, loginHASH) {
 	var data = { 
 		'MESSAGE.TO': to,
 		'MESSAGE.STR': message,
 		'AUTH.FROM': from,
 		'AUTH.HASH': loginHASH
-	}
+	};
 	
 	socketIO.emit('chat message send', data);
 }
 
-function setupIO() {
+function setupIO(username, loginHash) {
 	
-	var userData = {
+	/* var userData = {
 		'userName': getCookie("userName"),
 		'loginHASH': getCookie("loginHASH")
+	};*/
+	
+	var userData = {
+		'userName': username,
+		'loginHASH': loginHash
 	};
 	
 	socketIO = io.connect('' , { 
@@ -114,12 +137,21 @@ function setupIO() {
 	
 	socketIO.on('error', function (errorData) { 
 		console.log(errorData);
-		if(errorData=="Authentication error") { } 
+		if(errorData=="Authentication error - Invalid Username or Login-HASH") { 
+			document.getElementById('friends_TITLE').innerHTML = "MESSAGES (<font color='red'>Invalid AUTH</font>)";
+			updateLoginAttempts();
+		} 
 	});
-	socketIO.on('connect', function () { console.log("Connected to Chat Server") });
 	
-	socketIO.on('auth validated', function () {
-		console.log('Logged into Authentication');
+	socketIO.on('connect', function () {
+		addFriendToListSTR("callum_carmicheal", "Callum Carmicheal");
+		addFriendToListSTR("accountUsername", "Account Full Name");
+		addFriendToListSTR("先輩", "先輩");
+		
+		loginTries = 0;
+		document.getElementById('friends_TITLE').innerHTML = "MESSAGES (<font color='green'>Connected</font>)";
+		document.getElementById('login_FormBOX').innerHTML = "";
+		console.log("Connected to Chat Server");
 	});
 }
 
@@ -150,6 +182,39 @@ function getCookie(cname) {
         }
     }
     return "";
+}
+
+function getStart_onClick() {
+	var divElement = document.getElementById("login_FormBOX");
+	
+	var element = "";
+	element 	 = element + `<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">`;
+    element 	 = element + `<input class="mdl-textfield__input" type="text" id="login_USERNAME"/>`;
+    element 	 = element + `<label class="mdl-textfield__label" for="login_USERNAME">Username</label>`;
+    element 	 = element + `</div>`;
+    element 	 = element + `<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">`;
+    element 	 = element + `<input class="mdl-textfield__input" type="text" id="login_PASSWORD"/>`;
+    element 	 = element + `<label class="mdl-textfield__label" for="login_PASSWORD">Login Hash</label>`;
+    element 	 = element + `</div> <br>`;
+    element 	 = element + `<button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" onclick="login_onClick();"> Login </button> <br><br>`;
+    element 	 = element + `<div id="login_ATTEMPTS"><span class="mdl-badge" data-badge="0">Attempts</span></div><br>`;
+    element 	 = element + `<p>! Username: SomeUsernameHere | loginHASH=4PzyPedgzOfKZrY5cIb7 !</p>`
+    
+    $('#login_FormBOX').html(element);
+    $('#login_FormBOX').trigger("create");
+}
+
+function login_onClick() {
+	var username = $('#login_USERNAME').val();
+	var loginHASH = $('#login_PASSWORD').val();
+	setupIO(username, loginHASH);
+}
+
+function updateLoginAttempts() {
+	loginTries++;
+	
+	var element = document.getElementById("login_ATTEMPTS");
+	element.innerHTML = '<div id="login_ATTEMPTS"><span class="mdl-badge" data-badge="' + loginTries + '">Attempts</span></div><br>';
 }
 
 function connectToServer (token) {
