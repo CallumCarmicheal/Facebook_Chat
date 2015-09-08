@@ -1,17 +1,17 @@
 <html>
     <head>
+        <title>FaceLive - Loading</title>
+        
         <link rel="stylesheet" type="text/css" href="css/chatDesign.css">
         <link rel="stylesheet" type="text/css" href="css/normalize.3.css">
         <link rel="stylesheet" href="https://storage.googleapis.com/code.getmdl.io/1.0.4/material.indigo-pink.min.css">
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+        <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
         <script src="https://storage.googleapis.com/code.getmdl.io/1.0.4/material.min.js"></script>
 	    <script src="js/modernizr.js"></script>
         <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
-	    
-        <script src="js/chatGUI.js"></script>
-        <script src="js/modernizr.js"></script>
+	    <script src="js/modernizr.js"></script>
         
         <!-- Wide card with share menu button -->
         <style>
@@ -40,6 +40,7 @@
 	    <script>
 		    $(window).load(function() {
             	$("#loader").fadeOut("slow");
+            	document.title = "FaceLive";
             })
 		    
 		    window.onload = function () {
@@ -52,10 +53,11 @@
                     getStart_onClick();
                 });
             });
-	    </script>	
+	    </script>
     </head>
     
     <body>
+        <script src="js/chatGUI.js"></script>
         
         <!--<div id="loader" class="mdl-progress mdl-js-progress mdl-progress__indeterminate"></div>-->
         <!--<div id="loader" class="mdl-spinner mdl-js-spinner is-active">></div>-->
@@ -103,25 +105,27 @@
         				
                         <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
                         <input class="mdl-textfield__input" type="text" id="login_USERNAME"/>
-                        <label class="mdl-textfield__label" for="login_USERNAME">Username</label>
+                        <label class="mdl-textfield__label" for="login_USERNAME">Enter your Username</label>
                         </div>
-                        <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
-                        <input class="mdl-textfield__input" type="password" id="login_PASSWORD"/>
-                        <label class="mdl-textfield__label" for="login_PASSWORD">Login Hash</label>
-                        </div> <br>
+                        <br>
                         <button class="mdl-button mdl-js-button mdl-button--raised mdl-js-ripple-effect mdl-button--colored" onclick="login_onClick();"> Login </button> <br><br>
                         <div id="login_ATTEMPTS"><span class="mdl-badge" data-badge="0">Attempts</span></div><br>
-                        <p>! Username: SomeUsernameHere | loginHASH: 4PzyPedgzOfKZrY5cIb7 !</p>
         			</div>
         		</div>
         	</center>
         </div>
         
         <div class="chat-sidebar" style="padding-top: 0px; max-height:90%"> 
-            <div style="height: 30px; background-color: #3f51b5;"><popupText id="friends_TITLE">MESSAGES</popupText></div>
+            <div style="height: 30px; background-color: #3f51b5;">
+                <button class="mdl-button mdl-js-button mdl-button--icon mdl-button--colored" onclick="refreshFriends();">
+                  <i class="material-icons">refresh</i>
+                </button>
+                <popupText id="friends_TITLE">Chat</popupText>
+                <!-- Colored icon button -->
+            </div>
             
             <div style="padding-top: 10px;"> 
-                <div id="friends_USERLIST">
+                <div id="friends_USERLIST" style="overflow:auto;">
                 </div>
             </div>
         </div>

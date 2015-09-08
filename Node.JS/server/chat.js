@@ -8,8 +8,8 @@ module.exports = {
         console.log("ChatServer - Loaded");
     },
   
-    sendMessage : function(userid, usertoken, chatid, message) {
-        chatSendMessage(userid, usertoken, chatid, message);
+    sendMessage : function(chatData) {
+        chatSendMessage(chatData);
     }, 
     
     setBinding : function(binds) { 
@@ -18,11 +18,26 @@ module.exports = {
 };
 
 
-function chatSendMessage(userID, userTOKEN, chatID, Message) {  }
+function chatSendMessage(data) {
+    var from = data.to;
+    var to = data.from;
+	var message = data.message;
+	var time = data.time;
+	var data = getServer().getSocketData(to);
+	var sendData = { 'from': from, 'message': message, 'time': time }
+	
+	
+	if(data == false) {
+	    console.log("Could not get socket");
+	} else {
+	    data.Socket.emit('chat message recieve', sendData);
+	    console.log("Sending Chat Message : ([" + time + "]" + from + " --> " + to + "[" + data.Username + "] : " + message + ")");
+	}
+}
+
 function chatReadHistory(userID, userTOKEN, chatID, Message) { return null; }
 
 function chatHandler(socket) {
-    
     socket.on('chat message send', function(data) {
         onMessageSent(data);
     });
@@ -32,28 +47,14 @@ function chatHandler(socket) {
     });
 }
 
-
-
 function onMessageSent(queryData) {
-    var userTO = queryData['MESSAGE.TO'];
-    var messageSTR = queryData['MESSAGE.STR'];
-    var userFrom = queryData['AUTH.FROM'];
-    var hashSTR = queryData['AUTH.HASH'];
     
-    var sendData = {
-        'MESSAGE.FROM': userFrom,
-        'MESSAGE.STR': messageSTR,
-    }
-    
-    var validUser = false; validUser = binds['AUTH.Server'].validLoginHASH(userFrom, hashSTR);
-    var IO = binds['APP.SOCKET.IO'];
-    
-    if(validUser == true) {
-        IO.emit('something', sendData);
-        console.out("onUserMessageSent (User[" + userFrom + "], To[" + userTO + "], From[" + userFrom + "])");
-    }
 }
 
 function getChatHistory(queryData) { }
 
 function chatDeleteMessage(queryData) { }
+
+function getServer() {
+    return bindObjects['SOCKET.Server'];
+}

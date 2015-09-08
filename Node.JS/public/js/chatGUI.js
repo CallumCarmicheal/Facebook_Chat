@@ -15,6 +15,13 @@ var popups = [];
 var socketIO;
 var loginTries = 0;
 
+//Keyhandling
+var keyShiftPressed;
+
+//Auth
+var currentUsername = "";
+
+
 //this is used to close a popup
 function close_popup(id) {
 	for (var iii = 0; iii < popups.length; iii++) {
@@ -56,20 +63,24 @@ function register_popup(id, name) {
 			Array.remove(popups, iii);
 			popups.unshift(id);
 			calculate_popups();
-			
 			return;
 		}
 	}
 	
-	var SPAM = true;
-	var tempMessage = "Hello, how are you.";
-	if(name == "先輩") { tempMessage = "こんにちは星野-先輩"; }
-	var message = "<serverText> User " + name + ' </serverText><br><div class="messageTextDIV"><messageText>' + tempMessage + '</messageText></div> <br>';
+	var testData = false;
+	var message = "";
 	
-	if(SPAM) {
-		var iterations = 4;
-		for (var i = 0; i < iterations; i++) {
-		  message += message;
+	if(testData) {
+		var SPAM = false;
+		var tempMessage = "Hello, how are you.";
+		if(name == "先輩") { tempMessage = "こんにちは星野-先輩"; }
+		var message = "<serverText> User " + name + ' </serverText><br><div class="messageTextDIV"><messageText>' + tempMessage + '</messageText></div> <br>';
+		
+		if(SPAM) {
+			var iterations = 4;
+			for (var i = 0; i < iterations; i++) {
+			  message += message;
+			}
 		}
 	}
 
@@ -80,19 +91,48 @@ function register_popup(id, name) {
 	element = element + `
 		<div style="clear: both"></div></div>
 		<div class="popup-messages" style="overflow:hidden;"> 
-			<div id="chat_User:` + name + `" style="height: 80%;overflow: auto;width:100%;">` + message + `</div> 
-			<div style="bottom:0px;height:20%;width:100%;"><textarea style="width:100%;height:47%;resize: none;" onkeydown="if(event.keyCode == 13) {sendChatMessage(` + name + `);}" id="chat_Text:` + name + `"></textarea></div>
+			<div id="chat_User:` + name + `" style="height: 80%;overflow: auto;width:100%;"><PLACEHOLDER/>` + message + `</div> 
+			<div style="bottom:0px;height:20%;width:auto%;"><textarea style="width:100%;height:47%;resize: none;" onkeydown="if(event.keyCode == 13) {sendChatMessage('` + id + `');}" id="chat_Text:` + id + `"></textarea></div>
 		</div>
-	`; // So why is the textarea not going at full width
+	`; 
 	
 	document.getElementsByTagName("body")[0].innerHTML = document.getElementsByTagName("body")[0].innerHTML + element;
 	popups.unshift(id);
 	calculate_popups();
 }
 
-function addFriendToList(userData) {
+function popupExists(username) {
+	var elem = document.getElementById("chat_User:" + username);
+	if(elem == null) { return false; }
+	return true;
+}
+
+function addMessage(from, fullname, message, time) {
+	if(!popupExists(from)) {
+		register_popup(from, fullname);
+	}
 	
-	var element = 			`<div class="sidebar-name">`;
+	var messageHTML = "<serverText> User " + fullname + ' : ' + time + '</serverText><br><div class="messageTextDIV"><messageText>' + message + '</messageText></div> <br>';
+	var currentChat = document.getElementById('chat_User:' + from);
+	
+	
+	if(currentChat.innerHTML == null || currentChat.innerHTML.trim().length == 0) {
+		currentChat.innerHTML = messageHTML;
+	} else {
+		currentChat.innerHTML = currentChat.innerHTML + messageHTML;
+	}
+	
+	console.info("Recieved message from '" + fullname + "'[" + from + "] : '" + message + "' @ " + time);
+}
+
+function refreshFriends() {
+    socketIO.emit('friends get', {});
+
+	console.info("Sent friends refresh query");
+}
+
+function addFriendToList(userData) {
+	var element = 			`<div class="sidebar-name" id="friends_User:` + userData.username + `">`;
 	element 	= element + `<a href="javascript:register_popup('` + userData.username + `', '` + userData.fullname + `');">`;
     element 	= element + `<img width="30" height="30" src="img/icon_user.png" />`;
     element 	= element + `<span>` + userData.fullname + `</span>`;
@@ -107,18 +147,54 @@ function addFriendToListSTR(username, fullname) {
 	addFriendToList({ 'username': username, 'fullname': fullname });
 }
 
-function sendChatMessage(to, from, message, loginHASH) {
+function sendChatMessage(user) {
+	if(keyShiftPressed) {
+		return;
+	}
+
+	console.log("SEND MESSAGE : " + user);
+	var input = 'chat_Text:'+user;
+	var elem = document.getElementById(input);
+	var message = elem.value;
+	var dateObject = new Date();
+	var currentTime = dateObject.toLocaleTimeString();
+	
 	var data = { 
-		'MESSAGE.TO': to,
-		'MESSAGE.STR': message,
-		'AUTH.FROM': from,
-		'AUTH.HASH': loginHASH
+		'to': "",
+		'message': "",
+		'from': "",
+		'time': ""
 	};
 	
+	data.to = user;
+	data.message = message;
+	data.time = currentTime;
+	
+	console.log(data);
 	socketIO.emit('chat message send', data);
+	elem.value = "";
+	
+	
+	var messageHTML = '<serverText> You : ' + currentTime + '</serverText><br><div class="messageTextDIV"><messageText>' + message + '</messageText></div> <br>';
+	var currentChat = document.getElementById('chat_User:' + user);
+	if(currentChat.innerHTML == null || currentChat.innerHTML.trim().length == 0) {
+		currentChat.innerHTML = messageHTML;
+	} else {
+		currentChat.innerHTML = currentChat.innerHTML + messageHTML;
+	}
+}
+
+function recieveChatMessage(data) {
+	var from = data.from;
+	var fullname = data.from;
+	var message = data.message;
+	var time = data.time;
+	
+	addMessage(from, fullname, message, time)
 }
 
 function setupIO(username, loginHash) {
+	$(document).on('keyup keydown', function(e){keyShiftPressed = e.shiftKey} );
 	
 	/* var userData = {
 		'userName': getCookie("userName"),
@@ -131,28 +207,74 @@ function setupIO(username, loginHash) {
 	};
 	
 	socketIO = io.connect('' , { 
-		query: 'joinServerParameters=' + JSON.stringify(userData) ,
-		'force new connection': true
+		query: 'joinServerParameters=' + JSON.stringify(userData)
 	});
 	
 	socketIO.on('error', function (errorData) { 
 		console.log(errorData);
 		if(errorData=="Authentication error - Invalid Username or Login-HASH") { 
-			document.getElementById('friends_TITLE').innerHTML = "MESSAGES (<font color='red'>Invalid AUTH</font>)";
+			document.getElementById('friends_TITLE').innerHTML = "Chat (<font color='red'>Invalid AUTH</font>)";
 			updateLoginAttempts();
-		} 
+		}
 	});
 	
 	socketIO.on('connect', function () {
-		addFriendToListSTR("callum_carmicheal", "Callum Carmicheal");
-		addFriendToListSTR("accountUsername", "Account Full Name");
-		addFriendToListSTR("先輩", "先輩");
+		//addFriendToListSTR("callum_carmicheal", "Callum Carmicheal");
+		//addFriendToListSTR("accountUsername", "Account Full Name");
+		//addFriendToListSTR("先輩", "先輩");
 		
 		loginTries = 0;
-		document.getElementById('friends_TITLE').innerHTML = "MESSAGES (<font color='green'>Connected</font>)";
+		document.getElementById('friends_TITLE').innerHTML = "Chat (<font color='green'>Connected</font>)";
 		document.getElementById('login_FormBOX').innerHTML = "";
+		
+		document.title = "FaceLive - " + username;
 		console.log("Connected to Chat Server");
 	});
+	
+	socketIO.on('friends add', function(data) {
+		console.log("Add Friend " + data.fullname);
+		removeFriendsFromListSTR(data.username, data.fullname);
+		addFriendToListSTR(data.username, data.fullname);
+	});
+	
+	socketIO.on('chat message recieve', function(data) {
+		recieveChatMessage(data);
+	});
+	
+	socketIO.on('friends remove', function(data) {
+		removeFriendsFromListSTR(data.username, data.fullname);
+	});
+	
+	socketIO.on('disconnect', function() {
+		document.getElementById('friends_TITLE').innerHTML = "Chat (<font color='red'>Disconnected</font>)";
+		console.log("Disconnected from chat server");
+		
+		var re = new RegExp("friends_User", 'g');
+	    var elems = document.getElementsByTagName('*'), i = 0, el;
+	    while (el = elems[i++]) {
+	        if (el.id.match(re)) {
+	            el.remove();
+	        }
+	    }
+	});
+}
+
+function removeAllFreinds() {
+	var re = new RegExp("friends_User", 'g');
+	var elems = document.getElementsByTagName('*'), i = 0, el;
+	while (el = elems[i++]) {
+		if (el.id.match(re)) {
+			el.remove();
+		}
+	}
+}
+
+function removeFriendsFromListSTR(username, fullname) {
+	var elem = document.getElementById("friends_User:" + username);
+	
+	if(elem != null) {
+		elem.remove();
+	}
 }
 
 function createTestDATA() {
@@ -187,7 +309,7 @@ function getCookie(cname) {
 function getStart_onClick() {
 	var divElement = document.getElementById("login_FormBOX");
 	
-	var element = "";
+	var element  = "";
 	element 	 = element + `<div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">`;
     element 	 = element + `<input class="mdl-textfield__input" type="text" id="login_USERNAME"/>`;
     element 	 = element + `<label class="mdl-textfield__label" for="login_USERNAME">Username</label>`;
@@ -215,18 +337,6 @@ function updateLoginAttempts() {
 	
 	var element = document.getElementById("login_ATTEMPTS");
 	element.innerHTML = '<div id="login_ATTEMPTS"><span class="mdl-badge" data-badge="' + loginTries + '">Attempts</span></div><br>';
-}
-
-function connectToServer (token) {
-  var socket = io.connect('', {
-    query: 'loginHASH=' + token
-  });
-
-  socket.on('auth validated', function () {
-    console.log('authenticated');
-  }).on('auth disconnected', function () {
-    console.log('disconnected');
-  });
 }
 
 function scrollToBottom(username) {

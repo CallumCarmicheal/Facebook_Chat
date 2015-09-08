@@ -19,13 +19,14 @@ module.exports = {
         return authValidCreditentials(username, password);
     },
     
-    getAccount : function(accountName) { // Account id or name, maybe the id given for userIndex?
+    getAccount : function(username) { // Account id or name, maybe the id given for userIndex?
         var userData = {
             'userIndex': 0,
-            'username': "",
+            'username': username,
+            'fullname': authGetFullname(username),
             'loginHASH': [ '' ], // Array because an account can have many logins
             'email': '',
-            'friends': [ '' ],
+            'friends': [ '' ],   // Usernames only
             'groupChats': [ '' ] 
         }
         
@@ -34,6 +35,10 @@ module.exports = {
     
     validLogin : function(username, loginHASH) {
         return authValidLogin(username, loginHASH);
+    },
+    
+    getFullname : function(username) {
+        return authGetFullname(username);
     }
 };
 
@@ -44,7 +49,7 @@ function authValidUsername(username) {
         return true;
     }
     
-    return false; 
+    return true; 
 }
  
 function authValidCreditentials(username, password) { 
@@ -60,7 +65,7 @@ function authGetAccount(accountName) {
         'friends': [ '' ],
         'groupChats': [ '' ] 
     }
-        
+    
     return userData;
 }
 
@@ -69,7 +74,7 @@ function authValidHASH(strHash) {
         return true;
     }
     
-    return false;
+    return true;
 }
  
 function authValidLogin(username, loginHASH) {
@@ -80,4 +85,8 @@ function authValidLogin(username, loginHASH) {
     }
     
     return false;
+}
+
+function authGetFullname(username) {
+    return username;
 }
